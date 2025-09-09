@@ -25,6 +25,76 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
+          // Check if we're in mock mode or if backend is not available
+          const isMockMode = import.meta.env.VITE_MOCK_MODE === 'true' || true; // Default to mock mode for demo
+          
+          if (isMockMode) {
+            // Mock authentication for demo purposes
+            const mockUsers = {
+              'faculty@example.com': {
+                id: '1',
+                name: 'Dr. John Smith',
+                email: 'faculty@example.com',
+                role: 'faculty' as const,
+                department_id: 'cs',
+                department_name: 'Computer Science',
+              },
+              'hod@example.com': {
+                id: '2',
+                name: 'Dr. Sarah Johnson',
+                email: 'hod@example.com',
+                role: 'hod' as const,
+                department_id: 'cs',
+                department_name: 'Computer Science',
+              },
+              'director@example.com': {
+                id: '3',
+                name: 'Dr. Michael Brown',
+                email: 'director@example.com',
+                role: 'director' as const,
+                department_id: null,
+                department_name: 'Administration',
+              },
+              'registrar@example.com': {
+                id: '4',
+                name: 'Ms. Emily Davis',
+                email: 'registrar@example.com',
+                role: 'registrar' as const,
+                department_id: null,
+                department_name: 'Academic Office',
+              },
+              'admin@example.com': {
+                id: '5',
+                name: 'Mr. David Wilson',
+                email: 'admin@example.com',
+                role: 'admin' as const,
+                department_id: null,
+                department_name: 'IT Department',
+              },
+            };
+
+            const mockUser = mockUsers[email as keyof typeof mockUsers];
+            
+            if (mockUser && password === 'password123') {
+              const mockToken = 'mock-jwt-token-' + Date.now();
+              
+              // Store token and user data
+              localStorage.setItem('access_token', mockToken);
+              localStorage.setItem('user', JSON.stringify(mockUser));
+
+              set({
+                user: mockUser,
+                token: mockToken,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+              return;
+            } else {
+              throw new Error('Invalid credentials');
+            }
+          }
+
+          // Real API call (when backend is available)
           const response = await api.post<AuthResponse>(endpoints.auth.login, {
             email,
             password,
@@ -32,7 +102,6 @@ export const useAuthStore = create<AuthState>()(
 
           const { access_token, user } = response.data;
 
-          // Store token in localStorage (NOTE: Consider httpOnly cookies for production)
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('user', JSON.stringify(user));
 
@@ -42,9 +111,9 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error) {
+        } catch (error: any) {
           set({ isLoading: false });
-          throw error;
+          throw new Error(error.message || 'Login failed. Please check your credentials.');
         }
       },
 
