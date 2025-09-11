@@ -44,19 +44,15 @@ export const LoginPage: React.FC = () => {
     try {
       await login(values.email, values.password);
       
-      // Redirect to appropriate dashboard or previous page
+      // After successful login, navigate to the appropriate page
       if (from === '/') {
-        // Get user role and redirect to appropriate dashboard
-        // Note: This will be set after login, so we'll redirect in useEffect
-        window.location.reload(); // Force reload to get updated auth state
+        // Redirect to dashboard (will be handled by App.tsx routing)
+        navigate('/dashboard', { replace: true });
       } else {
         navigate(from, { replace: true });
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 
-        'Invalid email or password. Please try again.'
-      );
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -195,23 +191,22 @@ export const LoginPage: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    // Auto-fill the form
-                    const formik = document.querySelector('form');
-                    if (formik) {
-                      const emailInput = formik.querySelector('input[name="email"]') as HTMLInputElement;
-                      const passwordInput = formik.querySelector('input[name="password"]') as HTMLInputElement;
-                      if (emailInput && passwordInput) {
-                        emailInput.value = cred.email;
-                        passwordInput.value = cred.password;
-                        // Trigger change events
-                        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-                      }
+                  onClick={async () => {
+                    // Direct login with demo credentials
+                    setIsLoading(true);
+                    setError(null);
+                    try {
+                      await login(cred.email, cred.password);
+                      navigate('/dashboard', { replace: true });
+                    } catch (err: any) {
+                      setError(err.message || 'Login failed. Please try again.');
+                    } finally {
+                      setIsLoading(false);
                     }
                   }}
+                  disabled={isLoading}
                 >
-                  Use
+                  {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
               </div>
             ))}
